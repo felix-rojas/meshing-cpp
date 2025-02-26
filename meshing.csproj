@@ -13,4 +13,10 @@
 		<PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
 		<PackageReference Include="Silk.NET.Windowing" Version="2.22.0" />
 	</ItemGroup>
+		<!-- Shader Folders -->
+	<ItemGroup>
+    	<None Include="..\shaders\*.*">
+		<Link>shaders\A\</Link>
+		</None>
+	</ItemGroup>
 </Project>
