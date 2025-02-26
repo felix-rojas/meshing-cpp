@@ -90,7 +90,7 @@ public unsafe partial class Client
 
 
         // Fly camera movement
-        float movementSpeed = 0.15f;
+        float movementSpeed = 0.25f;
 
         if (keyboard.IsKeyPressed(Key.W))
             cameraPos += Helper.FromPitchYaw(cameraPitch, cameraYaw) * movementSpeed;
@@ -107,6 +107,8 @@ public unsafe partial class Client
         else if (keyboard.IsKeyPressed(Key.Q))
             cameraPos += Helper.FromPitchYaw(-MathF.PI / 2, 0) * movementSpeed;
 
+        if (keyboard.IsKeyPressed(Key.Escape))
+            window.Close();
         
 
         // Prepare OpenGL
