@@ -65,7 +65,7 @@ public unsafe partial struct Chunk
     // Shortcut functions
     public void SetDirty() => dirty = true;
     public void UnsetDirty() => dirty = false;
-    public bool IsDirty() => dirty;
+    public readonly bool IsDirty() => dirty;
 
     public static int WorldToLocal(int a) => a & Constants.ChunkMask;
     public static int GetHeightmapAccess(int i, int k) => i | (k * Constants.ChunkSize);

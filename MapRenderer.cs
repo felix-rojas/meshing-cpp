@@ -7,21 +7,31 @@ public unsafe partial class MapRenderer
     public float cameraPitch;
     public float cameraYaw;
 
-    public MapRenderer()
+ public MapRenderer(int max_width, int max_height, int max_depth)
+{
+    // Create and configure FastNoise object
+    FastNoiseLite noise = new();
+    noise.SetNoiseType(FastNoiseLite.NoiseType.ValueCubic);
+    noise.SetFrequency(0.02f); // Adjust frequency for finer or coarser details
+
+    m = new Map(max_width, max_height, max_depth);
+
+    for (int x = 0; x < max_width; x++)
     {
-        m = new Map(64, 64, 64);
+        for (int z = 0; z < max_depth; z++)
+        {
+            // Generate noise-based height value
+            float noiseValue = noise.GetNoise(x, z);
+            int height = (int)((noiseValue + 1) * 0.5f * max_height); // Normalize noise to fit height range
 
-
-        // Create hills
-        for (int x = 0; x < 64; x++)
-            for (int z = 0; z < 64; z++)
+            for (int y = 0; y < height && y < max_height; y++)
             {
-                var height = 1 + (int)((MathF.Sin(x / 8.0f) + 1) * 4) + (int)((MathF.Sin(z / 4.0f) + 1) * 4);
-
-                for (int y = 0; y < height; y++)
-                    m.AddVoxel(z, y, x, 1);
+                m.AddVoxel(z, y, x, 1);
             }
+        }
     }
+}
+
 
     public void Render()
     { 

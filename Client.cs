@@ -57,7 +57,7 @@ public unsafe partial class Client
         var version = major * 10 + minor;
         Console.WriteLine($"OpenGL Version: {version}");
 
-        mapRenderer = new();
+        mapRenderer = new(128,64,128);
 
 
 #if DEBUG
@@ -217,7 +217,7 @@ public unsafe partial class Client
     // Rendering
     bool firstRender = true;
 
-    float FieldOfView = 50.0f / 180.0f * MathF.PI;
+    readonly float FieldOfView = 50.0f / 180.0f * MathF.PI;
     float Aspect => window.Size.X / (float)window.Size.Y;
     float NearPlane = 1.0f;
     float FarPlane = 256.0f;

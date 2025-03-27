@@ -660,7 +660,7 @@ public unsafe partial class ChunkMesh
     }
 
 
-    protected unsafe bool DrawFaceCommon(Voxel* nextPtr, byte index)
+    protected static unsafe bool DrawFaceCommon(Voxel* nextPtr, byte index)
     {
         if (nextPtr->index == 0)
             return true;

@@ -4,10 +4,10 @@ using System.Collections.Generic;
 
 public unsafe class ShaderProgram
 {
-    public static string VERSION = "#version 330\n";
+    public const string VERSION = "#version 330\n";
 
-    private IEnumerable<string> vertexShaderFiles = Directory.EnumerateFiles("shaders/vert", "*.vert", SearchOption.AllDirectories);
-    private IEnumerable<string> fragShaderFiles = Directory.EnumerateFiles("shaders/frag", "*.frag", SearchOption.AllDirectories);
+    private readonly IEnumerable<string> vertexShaderFiles = Directory.EnumerateFiles("shaders/vert", "*.vert", SearchOption.AllDirectories);
+    private readonly IEnumerable<string> fragShaderFiles = Directory.EnumerateFiles("shaders/frag", "*.frag", SearchOption.AllDirectories);
 
     public ShaderProgram(string vertexShaderSource, string fragmentShaderSource)
     {
