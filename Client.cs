@@ -104,6 +104,7 @@ public unsafe partial class Client
 
         if (keyboard.IsKeyPressed(Key.E))
             cameraPos += Helper.FromPitchYaw(MathF.PI / 2, 0) * movementSpeed;
+            
         else if (keyboard.IsKeyPressed(Key.Q))
             cameraPos += Helper.FromPitchYaw(-MathF.PI / 2, 0) * movementSpeed;
 
@@ -201,7 +202,7 @@ public unsafe partial class Client
 
 
     // Silk
-    IWindow window;
+    readonly IWindow window;
     IMouse mouse;
     IKeyboard keyboard;
     IInputContext inputContext;
@@ -219,8 +220,8 @@ public unsafe partial class Client
 
     readonly float FieldOfView = 50.0f / 180.0f * MathF.PI;
     float Aspect => window.Size.X / (float)window.Size.Y;
-    float NearPlane = 1.0f;
-    float FarPlane = 256.0f;
+    readonly float NearPlane = 1.0f;
+    readonly float FarPlane = 256.0f;
 
     // Voxel data
     MapRenderer mapRenderer;
