@@ -1,14 +1,7 @@
 ﻿namespace meshing;
-using System.IO;
-using System.Collections.Generic;
 
 public unsafe class ShaderProgram
 {
-    public const string VERSION = "#version 330\n";
-
-    private readonly IEnumerable<string> vertexShaderFiles = Directory.EnumerateFiles("shaders/vert", "*.vert", SearchOption.AllDirectories);
-    private readonly IEnumerable<string> fragShaderFiles = Directory.EnumerateFiles("shaders/frag", "*.frag", SearchOption.AllDirectories);
-
     public ShaderProgram(string vertexShaderSource, string fragmentShaderSource)
     {
         Initialise(vertexShaderSource, fragmentShaderSource);
@@ -18,16 +11,8 @@ public unsafe class ShaderProgram
     {
         try
         {
-            vertexShader = new Shader(ShaderType.VertexShader, VERSION + vertexShaderSource);
-            fragmentShader = new Shader(ShaderType.FragmentShader, VERSION + fragmentShaderSource);
-            foreach (var file in fragShaderFiles)
-            {
-                Console.WriteLine(file);
-            }
-            foreach (var file in vertexShaderFiles)
-            {
-                Console.WriteLine(file);
-            }
+            vertexShader = new Shader(ShaderType.VertexShader, vertexShaderSource);
+            fragmentShader = new Shader(ShaderType.FragmentShader, fragmentShaderSource);
         }
         catch (Exception e)
         {

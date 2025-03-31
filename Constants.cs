@@ -19,13 +19,3 @@ public static class Constants
     public const int BYTES_PER_VOXEL = sizeof(byte);
     public const int BYTES_PER_CHUNK = VOXELS_PER_CHUNK * BYTES_PER_VOXEL;
 }
-
-public enum FaceType : byte
-{
-    yp = 0,
-    yn,
-    xp,
-    xn,
-    zp,
-    zn,
-}
