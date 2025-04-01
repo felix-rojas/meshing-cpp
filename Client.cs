@@ -1,13 +1,25 @@
 ﻿using Silk.NET.Input;
 using Silk.NET.Windowing;
-
 namespace meshing;
 
 public unsafe partial class Client
 {
+    // Add these with your other fields
+    private double _frameTimeAccumulator;
+    private int _frameCount;
+    private double _currentFps;
+    private double _currentFrameTime;
+    private readonly System.Text.StringBuilder _fpsTextBuilder = new();
+    private readonly IWindow window;
+    private Camera camera;
+    private CameraController cameraController;
+    private MapRenderer mapRenderer;
+    private IKeyboard keyboard;
+    private IMouse mouse;
+    private IInputContext inputContext;
+
     public Client()
     {
-        // Create a Silk.NET window
         var options = WindowOptions.Default;
         options.API = new GraphicsAPI(ContextAPI.OpenGL, new APIVersion(3, 3));
         options.Position = new(200, 200);
@@ -15,119 +27,99 @@ public unsafe partial class Client
 
         window = Window.Create(options);
 
-        // Callback when the window is created
-        window.Load += () =>
-        {
-            // Create an OpenGL Context
-            Gl = window.CreateOpenGL();
-            OnDidCreateOpenGLContext();
+        window.Load += OnWindowLoad;
+        window.Render += OnRender;
+        window.Update += OnUpdate;
 
-
-            // Precalculate input stuff
-            inputContext = window.CreateInput();
-            keyboard = inputContext.Keyboards[0];
-            mouse = inputContext.Mice[0];
-            mouse.DoubleClickTime = 1;
-        };
-
-        window.Render += (_) => Render();
-
-        window.Size = new(1920, 1080);
+        window.Size = new(1600, 1000);
         window.FramesPerSecond = 144;
         window.UpdatesPerSecond = 144;
         window.VSync = false;
 
-        // Initialise OpenGL and input context
         window.Initialize();
     }
 
-
-    public void Run()
+    private void OnWindowLoad()
     {
-        // Run forever
-        window.Run();
+        Gl = window.CreateOpenGL();
+        OnDidCreateOpenGLContext();
+
+        inputContext = window.CreateInput();
+        keyboard = inputContext.Keyboards[0];
+        mouse = inputContext.Mice[0];
+        mouse.DoubleClickTime = 1;
+
+        // Initialize camera with proper starting position
+        camera = new Camera(new Vector3(64, 64, 64));
+        cameraController = new CameraController(camera, keyboard, mouse);
+
+        InitializeFpsCounter();
+    }
+
+    private void InitializeFpsCounter()
+    {
+        _currentFps = 0;
+        _frameCount = 0;
+        _frameTimeAccumulator = 0;
+    }
+
+    private void UpdateFpsCounter(double deltaTime)
+    {
+        _frameTimeAccumulator += deltaTime;
+        _frameCount++;
+        _currentFrameTime = deltaTime;
+
+        // Update FPS every 0.25 seconds for smoother display
+        if (_frameTimeAccumulator >= 1.00)
+        {
+            _currentFps = _frameCount / _frameTimeAccumulator;
+            _frameCount = 0;
+            _frameTimeAccumulator = 0;
+            _fpsTextBuilder.Clear();
+            _fpsTextBuilder.AppendFormat("FPS: {0:0.0} ({1:0.00}ms)", _currentFps, _currentFrameTime * 1000);
+            Console.WriteLine(_fpsTextBuilder);
+        }
     }
 
 
-    void OnDidCreateOpenGLContext()
+    private void OnUpdate(double deltaTime)
+    {
+        camera.AspectRatio = window.Size.X / (float)window.Size.Y;
+        cameraController.Update();
+    }
+
+    private void OnRender(double deltaTime)
+    {
+        UpdateFpsCounter(deltaTime);
+
+        PreRenderSetup();
+
+        VoxelShader.UseProgram();
+        VoxelShader.mvp.Set(camera.GetViewProjectionMatrix());
+        VoxelShader.showWireframe.Set(keyboard.IsKeyPressed(Key.Space));
+
+        mapRenderer.cameraPitch = camera.Pitch;
+        mapRenderer.cameraYaw = camera.Yaw;
+        mapRenderer.Render();
+    }
+
+    private void OnDidCreateOpenGLContext()
     {
         var major = Gl.GetInteger(GetPName.MajorVersion);
         var minor = Gl.GetInteger(GetPName.MinorVersion);
+        Console.WriteLine($"OpenGL Version: {major * 10 + minor}");
 
-        var version = major * 10 + minor;
-        Console.WriteLine($"OpenGL Version: {version}");
-
-        mapRenderer = new(128,64,128);
-
+        mapRenderer = new(128, 64, 128);
 
 #if DEBUG
-        // Set up the OpenGL debug message callback (NVIDIA only)
         debugDelegate = DebugCallback;
-
         Gl.Enable(EnableCap.DebugOutput);
         Gl.Enable(EnableCap.DebugOutputSynchronous);
         Gl.DebugMessageCallback(debugDelegate, null);
 #endif
     }
 
-    void Render()
-    {
-        if (firstRender)
-        {
-            cameraPos = new Vector3(0, 18, 0) - Helper.FromPitchYaw(cameraPitch, cameraYaw) * 32;
-            lastMouse = mouse.Position;
-            firstRender = false;
-        }
-
-
-        // Mouse movement
-        var diff = lastMouse - mouse.Position;
-
-        cameraYaw -= diff.X * 0.003f;
-        cameraPitch += diff.Y * 0.003f;
-
-        lastMouse = mouse.Position;
-
-
-        // Fly camera movement
-        float movementSpeed = 0.25f;
-
-        if (keyboard.IsKeyPressed(Key.W))
-            cameraPos += Helper.FromPitchYaw(cameraPitch, cameraYaw) * movementSpeed;
-        else if (keyboard.IsKeyPressed(Key.S))
-            cameraPos -= Helper.FromPitchYaw(cameraPitch, cameraYaw) * movementSpeed;
-
-        if (keyboard.IsKeyPressed(Key.A))
-            cameraPos += Helper.FromPitchYaw(0, cameraYaw - MathF.PI / 2) * movementSpeed;
-        else if (keyboard.IsKeyPressed(Key.D))
-            cameraPos += Helper.FromPitchYaw(0, cameraYaw + MathF.PI / 2) * movementSpeed;
-
-        if (keyboard.IsKeyPressed(Key.E))
-            cameraPos += Helper.FromPitchYaw(MathF.PI / 2, 0) * movementSpeed;
-            
-        else if (keyboard.IsKeyPressed(Key.Q))
-            cameraPos += Helper.FromPitchYaw(-MathF.PI / 2, 0) * movementSpeed;
-
-        if (keyboard.IsKeyPressed(Key.Escape))
-            window.Close();
-        
-
-        // Prepare OpenGL
-        PreRenderSetup();
-
-
-        // Prepare the shader
-        VoxelShader.UseProgram();
-        VoxelShader.mvp.Set(GetViewProjection());
-        VoxelShader.showWireframe.Set(keyboard.IsKeyPressed(Key.Space));
-
-
-        // Render the map
-        mapRenderer.cameraPitch = cameraPitch;
-        mapRenderer.cameraYaw = cameraYaw;
-
-        mapRenderer.Render();
-    }
+    // Rest of your methods (PreRenderSetup, etc.) remain the same
 
     public void PreRenderSetup()
     {
@@ -139,7 +131,6 @@ public unsafe partial class Client
         Gl.Enable(EnableCap.CullFace);
         Gl.FrontFace(FrontFaceDirection.CW);
 
-
         // Clear everything
         Gl.ClearDepth(1.0f);
         Gl.DepthFunc(DepthFunction.Less);
@@ -150,79 +141,32 @@ public unsafe partial class Client
         Gl.ClearColor(0, 0, 0, 0);
         Gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 
-
         // Set the viewport to the window size
         Gl.Viewport(0, 0, (uint)window.Size.X, (uint)window.Size.Y);
     }
-
-    protected Matrix4x4 GetViewProjection()
+    public void Run()
     {
-        var view = Helper.CreateFPSView(cameraPos, cameraPitch, cameraYaw);
-        var proj = Matrix4x4.CreatePerspectiveFieldOfView(FieldOfView, Aspect, NearPlane, FarPlane);
-
-        return view * proj;
+        window.Run();
     }
-
 
 #if DEBUG
     static DebugProc debugDelegate;
 
     static unsafe void DebugCallback(GLEnum source, GLEnum type, int id, GLEnum severity, int length, nint messageInt, nint userParam)
     {
-        // TODO
         var message = Marshal.PtrToStringAnsi(messageInt);
 
         if (message == "Pixel-path performance warning: Pixel transfer is synchronized with 3D rendering.")
-        {
-            // TODO: Use proper id for this
             return;
-        }
 
-        // Skip our own notifications
         if (severity == GLEnum.DebugSeverityNotification)
             return;
 
-        // Buffer detailed info
-        if (id == 131185)
-            return;
-
-        // "Program/shader state performance warning: Vertex shader in program 69 is being recompiled based on GL state."
-        if (id == 131218)
-            return;
-
-        // "Buffer performance warning: Buffer object 15 (bound to NONE, usage hint is GL_DYNAMIC_DRAW) is being copied/moved from VIDEO memory to HOST memory."
-        if (id == 131186)
+        if (id == 131185 || id == 131218 || id == 131186)
             return;
 
         AssertFalse();
         Console.WriteLine(message);
     }
 #endif
-
-
-
-    // Silk
-    readonly IWindow window;
-    IMouse mouse;
-    IKeyboard keyboard;
-    IInputContext inputContext;
-
-
-    // Camera
-    Vector2 lastMouse;
-    Vector3 cameraPos;
-    float cameraPitch = -MathF.PI / 6;
-    float cameraYaw = MathF.PI / 4;
-
-
-    // Rendering
-    bool firstRender = true;
-
-    readonly float FieldOfView = 50.0f / 180.0f * MathF.PI;
-    float Aspect => window.Size.X / (float)window.Size.Y;
-    readonly float NearPlane = 1.0f;
-    readonly float FarPlane = 256.0f;
-
-    // Voxel data
-    MapRenderer mapRenderer;
 }

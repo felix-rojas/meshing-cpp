@@ -22,6 +22,18 @@ internal class Program
 {
     static void Main(string[] args)
     {
-        new Client().Run();
+        try
+        {
+            // Create and run the client
+            var client = new Client();
+            client.Run();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fatal error: {ex}");
+            #if DEBUG
+            Debugger.Break();
+            #endif
+        }
     }
 }
