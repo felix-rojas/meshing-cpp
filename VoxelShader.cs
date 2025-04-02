@@ -3,6 +3,7 @@
 public static class VoxelShader
 {
     public static ShaderProgram shader;
+    public static ShaderProgram imgui_shader;
     public static bool Active => shader?.Active ?? false;
 
     public static void Initialise()
@@ -15,9 +16,16 @@ public static class VoxelShader
         
         shader = new(vertexShader, fragmentShader);
 
+        string imguiVertexShader = LoadShaderFile("shaders/vert/imgui.vert");
+        string imguiFragmentShader = LoadShaderFile("shaders/frag/imgui.frag");
+        
+
+        imgui_shader = new(imguiVertexShader, imguiFragmentShader);
+
         mvp = new(shader, "mvp");
         worldPosition = new(shader, "worldPosition");
         showWireframe = new(shader, "showWireframe");
+        imgui = new(imgui_shader, "imgui");
     }
 
 
@@ -89,4 +97,5 @@ public static class VoxelShader
     public static ShaderValue mvp;
     public static ShaderValue worldPosition;
     public static ShaderValue showWireframe;
+    public static ShaderValue imgui;
 }

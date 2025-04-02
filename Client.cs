@@ -1,6 +1,7 @@
 ﻿using Silk.NET.Input;
 using Silk.NET.Windowing;
 namespace meshing;
+using ImGuiNET;
 
 public unsafe partial class Client
 {
@@ -11,12 +12,14 @@ public unsafe partial class Client
     private double _currentFrameTime;
     private readonly System.Text.StringBuilder _fpsTextBuilder = new();
     private readonly IWindow window;
+    private readonly IWindow window2;
     private Camera camera;
     private CameraController cameraController;
     private MapRenderer mapRenderer;
     private IKeyboard keyboard;
     private IMouse mouse;
     private IInputContext inputContext;
+
 
     public Client()
     {
@@ -37,6 +40,16 @@ public unsafe partial class Client
         window.VSync = false;
 
         window.Initialize();
+
+        window2 = Window.Create(options);
+        window2.Load += OnWindow2Load;
+        window2.Render += OnRender2;
+        window2.Update += OnUpdate;
+        window2.Size = new(600, 600);
+        window2.FramesPerSecond = 60;
+        window2.UpdatesPerSecond = 60;
+        window2.VSync = false;
+        window2.Initialize();
     }
 
     private void OnWindowLoad()
@@ -54,6 +67,15 @@ public unsafe partial class Client
         cameraController = new CameraController(camera, keyboard, mouse);
 
         InitializeFpsCounter();
+
+    }
+
+        private void OnWindow2Load()
+    {
+        Gl = window.CreateOpenGL();
+        OnDidCreateOpenGLContext();
+
+        InitializeFpsCounter();
     }
 
     private void InitializeFpsCounter()
@@ -69,7 +91,6 @@ public unsafe partial class Client
         _frameCount++;
         _currentFrameTime = deltaTime;
 
-        // Update FPS every 0.25 seconds for smoother display
         if (_frameTimeAccumulator >= 1.00)
         {
             _currentFps = _frameCount / _frameTimeAccumulator;
@@ -101,6 +122,13 @@ public unsafe partial class Client
         mapRenderer.cameraPitch = camera.Pitch;
         mapRenderer.cameraYaw = camera.Yaw;
         mapRenderer.Render();
+    }
+
+        private void OnRender2(double deltaTime)
+    {
+        UpdateFpsCounter(deltaTime);
+
+        PreRenderSetup();
     }
 
     private void OnDidCreateOpenGLContext()

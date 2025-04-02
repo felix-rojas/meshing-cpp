@@ -4,7 +4,7 @@ global using System.Numerics;
 global using System.Runtime.InteropServices;
 global using Silk.NET.OpenGL;
 using System.Diagnostics;
-
+using System.Threading.Tasks;
 namespace meshing;
 
 
@@ -31,9 +31,9 @@ internal class Program
         catch (Exception ex)
         {
             Console.WriteLine($"Fatal error: {ex}");
-            #if DEBUG
+#if DEBUG
             Debugger.Break();
-            #endif
+#endif
         }
     }
 }
